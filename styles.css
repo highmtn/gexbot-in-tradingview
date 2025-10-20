@@ -103,6 +103,13 @@
   pointer-events: none;
 }
 
+.chart-error-indicator {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: normal;
+  color: #dc3545;
+}
+
 /* API Key Form Inside Chart */
 .chart-api-key-form {
   padding: 20px;

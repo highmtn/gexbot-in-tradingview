@@ -161,6 +161,13 @@
     tickerLabel.className = 'chart-ticker-label';
     tickerLabel.textContent = config.symbol;
 
+    // Create error indicator (hidden by default)
+    const errorIndicator = document.createElement('span');
+    errorIndicator.className = 'chart-error-indicator';
+    errorIndicator.textContent = 'API Error';
+    errorIndicator.style.display = 'none';
+    tickerLabel.appendChild(errorIndicator);
+
     container.appendChild(resizeHandleTopRight);
     container.appendChild(resizeHandleBottomRight);
     container.appendChild(tickerLabel);
@@ -250,24 +257,18 @@
     let canvas = null;
     let hasApiError = false;
 
-    // Function to show error message
-    function showErrorMessage(message) {
+    // Function to show error indicator
+    function showErrorMessage() {
       hasApiError = true;
-      // Remove canvas if it exists
-      if (canvas) {
-        canvas.remove();
-        canvas = null;
+      errorIndicator.style.display = 'inline';
+    }
+
+    // Function to clear error indicator
+    function clearErrorMessage() {
+      if (hasApiError) {
+        hasApiError = false;
+        errorIndicator.style.display = 'none';
       }
-      // Remove any existing error message
-      const existingError = container.querySelector('.chart-api-error');
-      if (existingError) {
-        existingError.remove();
-      }
-      // Create error message div
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'chart-api-error';
-      errorDiv.textContent = message;
-      container.appendChild(errorDiv);
     }
 
     // Create canvas for Chart.js if API key exists
@@ -1121,15 +1122,19 @@
         { action: 'fetchGexData', url: config.classicApiUrl },
         (response) => {
           if (chrome.runtime.lastError) {
-            showErrorMessage('Gexbot API error.');
+            showErrorMessage();
             return;
           }
           if (response?.success) {
             // Validate response data
             if (!response.data || !response.data.strikes || !Array.isArray(response.data.strikes)) {
-              showErrorMessage('Gexbot API error.');
+              showErrorMessage();
               return;
             }
+
+            // Clear error indicator on successful data fetch
+            clearErrorMessage();
+
             gexData = response.data;
             if (config.stateApiUrl) {
               chrome.runtime.sendMessage(
@@ -1150,7 +1155,7 @@
               updateChart();
             }
           } else {
-            showErrorMessage('Gexbot API error.');
+            showErrorMessage();
           }
         }
       );
