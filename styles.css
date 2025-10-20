@@ -1,0 +1,193 @@
+.chart-overlay-container {
+  position: fixed;
+  width: 280px;
+  height: 280px;
+  background-color: rgba(242, 247, 255, 0.9);
+  border: 1px solid rgb(221, 227, 236);
+  border-radius: 6px;
+  z-index: 9999;
+  cursor: grab;
+  transition: background-color 0.2s ease;
+}
+
+.chart-overlay-container:hover {
+  background-color: rgba(242, 247, 255, .5);
+}
+
+.chart-resize-handle-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nesw-resize;
+  z-index: 10001;
+}
+
+.chart-resize-handle-bottom-right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  z-index: 10001;
+}
+
+.chart-classic-link {
+  position: absolute;
+  bottom: 5px;
+  right: 45px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #666;
+  text-decoration: none;
+  user-select: none;
+  z-index: 10002;
+  background-color: rgba(240, 240, 240, 0.9);
+  border: 1px solid rgba(220, 220, 220, 0.9);
+  border-radius: 4px;
+  padding: 6px 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.chart-state-link {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #666;
+  text-decoration: none;
+  user-select: none;
+  z-index: 10002;
+  background-color: rgba(240, 240, 240, 0.9);
+  border: 1px solid rgba(220, 220, 220, 0.9);
+  border-radius: 4px;
+  padding: 6px 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.chart-overlay-container:hover .chart-classic-link,
+.chart-overlay-container:hover .chart-state-link {
+  opacity: 1;
+}
+
+.chart-classic-link:hover,
+.chart-state-link:hover {
+  background-color: rgba(250, 250, 250, 0.95);
+  color: #333;
+}
+
+.overlay-chart {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-ticker-label {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 10002;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* API Key Form Inside Chart */
+.chart-api-key-form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.chart-api-key-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.chart-api-key-input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: monospace;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-api-key-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.chart-api-key-button {
+  width: 100px;
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin: 0 auto;
+}
+
+.chart-api-key-button:hover {
+  background-color: #357abd;
+}
+
+.chart-api-key-button:active {
+  background-color: #2d6ba3;
+}
+
+.chart-api-key-status {
+  font-size: 12px;
+  padding: 6px;
+  border-radius: 3px;
+  text-align: center;
+  display: none;
+}
+
+.chart-api-key-status.success {
+  display: block;
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.chart-api-key-status.error {
+  display: block;
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* API Error Message */
+.chart-api-error {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}

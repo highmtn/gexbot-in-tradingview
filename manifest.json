@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Gexbot in TradingView Mini Chart",
+  "version": "1.0",
+  "description": "Displays Gexbot Data on TradingView charts",
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["https://api.gexbot.com/*", "https://www.gexbot.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gexbot Chart Settings"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.tradingview.com/chart/*"
+      ],
+      "js": ["chart.min.js", "chartjs-plugin-annotation.min.js", "content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["chart.min.js"],
+      "matches": ["https://www.tradingview.com/*"]
+    }
+  ]
+}
