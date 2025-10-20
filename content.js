@@ -8,8 +8,7 @@
   }
 
   // Helper functions to generate API URLs and gexbot links
-  const DEFAULT_API_KEY = '';
-  let API_KEY = DEFAULT_API_KEY;
+  let API_KEY = '';
 
   // Store chart instances for dynamic updates
   let chartInstances = [];
@@ -18,8 +17,6 @@
   chrome.storage.sync.get(['gexbotApiKey'], (result) => {
     if (result.gexbotApiKey) {
       API_KEY = result.gexbotApiKey;
-    } else {
-      API_KEY = DEFAULT_API_KEY;
     }
 
     // Initialize charts after API key is loaded
@@ -47,7 +44,7 @@
 
   function reloadAllCharts() {
     // Remove all existing chart containers
-    chartInstances.forEach(instance => {
+    chartInstances.forEach((instance) => {
       if (instance.container) {
         instance.container.remove();
       }
@@ -70,7 +67,7 @@
     }
   };
 
-  const createChartConfig = (symbol, position, barLevels) => {
+  const createChartConfig = (symbol, position, barLevels, levelsAboveAnnotation, levelsBelowAnnotation) => {
     return {
       symbol,
       position,
@@ -79,6 +76,8 @@
       classicGexbotUrl: getGexbotUrl(symbol, 'classic'),
       stateGexbotUrl: getGexbotUrl(symbol, 'state'),
       barLevels,
+      levelsAboveAnnotation: levelsAboveAnnotation ?? 5, // Default 5 levels above
+      levelsBelowAnnotation: levelsBelowAnnotation ?? 5, // Default 5 levels below
     };
   };
 
@@ -89,35 +88,35 @@
     // MES - show ES_SPX and SPY
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
-        createChartConfig('ES_SPX', { bottom: '420px', left: '60px' }, 15),
-        createChartConfig('SPY', { bottom: '120px', left: '60px' }, 15),
+        createChartConfig('ES_SPX', { bottom: '420px', left: '60px' }, 15, 4, 4),
+        createChartConfig('SPY', { bottom: '120px', left: '60px' }, 15, 4, 4),
       ];
     }
 
     // MNQ - show NQ_NDX and QQQ
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
-        createChartConfig('NQ_NDX', { bottom: '420px', left: '60px' }, 25),
-        createChartConfig('QQQ', { bottom: '120px', left: '60px' }, 25),
+        createChartConfig('NQ_NDX', { bottom: '420px', left: '60px' }, 25, 5, 5),
+        createChartConfig('QQQ', { bottom: '120px', left: '60px' }, 25, 4, 4),
       ];
     }
 
     // M2K - show RUT and IWM
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
-        createChartConfig('RUT', { bottom: '420px', left: '60px' }, 8),
-        createChartConfig('IWM', { bottom: '120px', left: '60px' }, 8),
+        createChartConfig('RUT', { bottom: '420px', left: '60px' }, 8, 3, 3),
+        createChartConfig('IWM', { bottom: '120px', left: '60px' }, 8, 3, 3),
       ];
     }
 
     // GLD - only one chart
     if (currentUrl.includes('/chart/XxfKvVMV/')) {
-      return [createChartConfig('GLD', { bottom: '120px', left: '60px' }, 10)];
+      return [createChartConfig('GLD', { bottom: '120px', left: '60px' }, 10, 3, 3)];
     }
 
-    // MCL - only one chart
+    // MCL - only one chart (USO with custom 3 level limit)
     if (currentUrl.includes('/chart/kkaSjk8Y/')) {
-      return [createChartConfig('USO', { bottom: '120px', left: '60px' }, 10)];
+      return [createChartConfig('USO', { bottom: '120px', left: '60px' }, 10, 3, 3)];
     }
 
     // No match - return empty array
@@ -464,11 +463,11 @@
           const maxIndex = sortedStrikes.findIndex(
             (s) => s[0] > annotationRange.max
           );
-          const startIndex = Math.max(0, minIndex - 5);
+          const startIndex = Math.max(0, minIndex - config.levelsBelowAnnotation);
           const endIndex =
             maxIndex === -1
               ? sortedStrikes.length
-              : Math.min(sortedStrikes.length, maxIndex + 5);
+              : Math.min(sortedStrikes.length, maxIndex + config.levelsAboveAnnotation);
           filteredStrikes = sortedStrikes.slice(startIndex, endIndex);
         } else {
           const spot = gexData.spot;
@@ -721,11 +720,11 @@
           const maxIndex = sortedStrikes.findIndex(
             (s) => s[0] > annotationRange.max
           );
-          const startIndex = Math.max(0, minIndex - 5);
+          const startIndex = Math.max(0, minIndex - config.levelsBelowAnnotation);
           const endIndex =
             maxIndex === -1
               ? sortedStrikes.length
-              : Math.min(sortedStrikes.length, maxIndex + 5);
+              : Math.min(sortedStrikes.length, maxIndex + config.levelsAboveAnnotation);
           filteredStrikes = sortedStrikes.slice(startIndex, endIndex);
         } else {
           const spot = gexData.spot;
@@ -1127,7 +1126,11 @@
           }
           if (response?.success) {
             // Validate response data
-            if (!response.data || !response.data.strikes || !Array.isArray(response.data.strikes)) {
+            if (
+              !response.data ||
+              !response.data.strikes ||
+              !Array.isArray(response.data.strikes)
+            ) {
               showErrorMessage();
               return;
             }
