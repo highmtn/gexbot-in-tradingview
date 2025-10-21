@@ -198,3 +198,35 @@
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
+/* Sum Display in Upper Left (below ticker) */
+.chart-sum-display {
+  position: absolute;
+  top: 28px;
+  left: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 4px 8px;
+  border-radius: 3px;
+  z-index: 10002;
+  user-select: none;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.chart-sum-value {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.chart-sum-value.positive {
+  color: #22c55e;
+}
+
+.chart-sum-value.negative {
+  color: #ef4444;
+}

@@ -167,9 +167,25 @@
     errorIndicator.style.display = 'none';
     tickerLabel.appendChild(errorIndicator);
 
+    // Create sum display (upper right corner)
+    const sumDisplay = document.createElement('div');
+    sumDisplay.className = 'chart-sum-display';
+
+    const sumVolValue = document.createElement('div');
+    sumVolValue.className = 'chart-sum-value';
+    sumVolValue.textContent = '--';
+
+    const sumOiValue = document.createElement('div');
+    sumOiValue.className = 'chart-sum-value';
+    sumOiValue.textContent = '--';
+
+    sumDisplay.appendChild(sumVolValue);
+    sumDisplay.appendChild(sumOiValue);
+
     container.appendChild(resizeHandleTopRight);
     container.appendChild(resizeHandleBottomRight);
     container.appendChild(tickerLabel);
+    container.appendChild(sumDisplay);
     container.appendChild(classicLink);
     container.appendChild(stateLink);
 
@@ -267,6 +283,49 @@
       if (hasApiError) {
         hasApiError = false;
         errorIndicator.style.display = 'none';
+      }
+    }
+
+    // Function to format large numbers
+    function formatValue(value) {
+      const absValue = Math.abs(value);
+      if (absValue >= 10000) {
+        // >= 10000: divide by 1000 and round to whole number
+        return Math.round(value / 1000) + 'K';
+      } else if (absValue >= 1000) {
+        // 1000 to 10000: divide by 1000 and round to 1 decimal place
+        return (value / 1000).toFixed(1) + 'K';
+      }
+      // -1000 to 1000: round to whole number
+      return Math.round(value).toString();
+    }
+
+    // Function to update sum display
+    function updateSumDisplay() {
+      if (!gexData) return;
+
+      // Update sum_gex_vol
+      if (gexData.sum_gex_vol !== undefined && gexData.sum_gex_vol !== null) {
+        const volValue = gexData.sum_gex_vol;
+        sumVolValue.textContent = formatValue(volValue);
+        sumVolValue.className = 'chart-sum-value';
+        if (volValue > 0) {
+          sumVolValue.classList.add('positive');
+        } else if (volValue < 0) {
+          sumVolValue.classList.add('negative');
+        }
+      }
+
+      // Update sum_gex_oi
+      if (gexData.sum_gex_oi !== undefined && gexData.sum_gex_oi !== null) {
+        const oiValue = gexData.sum_gex_oi;
+        sumOiValue.textContent = formatValue(oiValue);
+        sumOiValue.className = 'chart-sum-value';
+        if (oiValue > 0) {
+          sumOiValue.classList.add('positive');
+        } else if (oiValue < 0) {
+          sumOiValue.classList.add('negative');
+        }
       }
     }
 
@@ -546,7 +605,7 @@
       if (myChart.data.datasets[1]) {
         myChart.data.datasets[1].data = stateChartData;
         myChart.data.datasets[1].backgroundColor = stateChartData.map((val) =>
-          val >= 0 ? 'rgba(65, 208, 211, 1)' : 'rgba(170, 86, 249, 1)'
+          val >= 0 ? 'rgba(107, 253, 255, 1)' : 'rgba(170, 86, 249, 1)'
         );
       }
 
@@ -869,7 +928,7 @@
               label: 'State Volume',
               data: stateChartData,
               backgroundColor: stateChartData.map((val) =>
-                val >= 0 ? 'rgba(65, 208, 211, 1)' : 'rgba(170, 86, 249, 1)'
+                val >= 0 ? 'rgba(49, 234, 237, 1)' : 'rgba(170, 86, 249, 1)'
               ),
               borderWidth: 0,
               xAxisID: 'x2',
@@ -894,6 +953,13 @@
             },
             annotation: {
               annotations: {
+                zeroLine: {
+                  type: 'line',
+                  xMin: 0,
+                  xMax: 0,
+                  borderColor: 'rgba(215, 215, 215, 0.5)',
+                  borderWidth: 1,
+                },
                 ...(spotPrice && spotPosition !== -1
                   ? {
                       spotLine: {
@@ -997,7 +1063,7 @@
                         type: 'line',
                         yMin: majorLongGammaPosition,
                         yMax: majorLongGammaPosition,
-                        borderColor: 'rgb(65, 208, 211)',
+                        borderColor: 'rgb(49, 234, 237)',
                         borderWidth: 1,
                         borderDash: [2, 2],
                         label: {
@@ -1006,7 +1072,7 @@
                             stateData.major_long_gamma
                           ).toString(),
                           position: 'end',
-                          color: 'rgb(65, 208, 211)',
+                          color: 'rgb(49, 234, 237)',
                           backgroundColor: 'rgba(255, 255, 255, 1)',
                           yAdjust: 0,
                           padding: 1,
@@ -1139,6 +1205,10 @@
             clearErrorMessage();
 
             gexData = response.data;
+
+            // Update sum display with new data
+            updateSumDisplay();
+
             if (config.stateApiUrl) {
               chrome.runtime.sendMessage(
                 { action: 'fetchGexData', url: config.stateApiUrl },
