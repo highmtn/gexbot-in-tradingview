@@ -224,9 +224,9 @@
 }
 
 .chart-sum-value.positive {
-  color: #22c55e;
+  color: #1a9748;
 }
 
 .chart-sum-value.negative {
-  color: #ef4444;
+  color: #af3131;
 }

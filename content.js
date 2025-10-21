@@ -605,7 +605,7 @@
       if (myChart.data.datasets[1]) {
         myChart.data.datasets[1].data = stateChartData;
         myChart.data.datasets[1].backgroundColor = stateChartData.map((val) =>
-          val >= 0 ? 'rgba(107, 253, 255, 1)' : 'rgba(170, 86, 249, 1)'
+          val >= 0 ? 'rgba(100, 233, 235, 1)' : 'rgba(170, 86, 249, 1)'
         );
       }
 
@@ -1063,7 +1063,7 @@
                         type: 'line',
                         yMin: majorLongGammaPosition,
                         yMax: majorLongGammaPosition,
-                        borderColor: 'rgb(49, 234, 237)',
+                        borderColor: 'rgb(100, 233, 235)',
                         borderWidth: 1,
                         borderDash: [2, 2],
                         label: {
