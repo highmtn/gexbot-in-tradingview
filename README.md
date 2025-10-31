@@ -1,5 +1,5 @@
 # Gexbot in TradingView Mini Chart
-
+ 
 A Chrome extension that displays Gexbot gamma exposure (GEX) data as interactive chart overlays on TradingView charts.
 
 ## Features
