@@ -237,12 +237,10 @@
             setTimeout(() => {
               formContainer.remove();
 
-              // Create canvas
-              canvas = document.createElement('canvas');
-              canvas.className = 'overlay-chart';
-              canvas.width = 280;
-              canvas.height = 280;
-              container.appendChild(canvas);
+              // Create chart div
+              chartDiv = document.createElement('div');
+              chartDiv.className = 'overlay-chart';
+              container.appendChild(chartDiv);
 
               // Initialize chart
               initChart();
@@ -265,11 +263,11 @@
     document.body.appendChild(container);
 
     // Chart instance reference
-    let myChart = null;
+    let uplot = null;
     let gexData = null;
     let stateData = null;
     let isFirstDataLoad = true;
-    let canvas = null;
+    let chartDiv = null;
     let hasApiError = false;
 
     // Function to show error indicator
@@ -329,13 +327,11 @@
       }
     }
 
-    // Create canvas for Chart.js if API key exists
+    // Create chart div for uPlot if API key exists
     if (API_KEY && API_KEY !== '') {
-      canvas = document.createElement('canvas');
-      canvas.className = 'overlay-chart';
-      canvas.width = 280;
-      canvas.height = 280;
-      container.appendChild(canvas);
+      chartDiv = document.createElement('div');
+      chartDiv.className = 'overlay-chart';
+      container.appendChild(chartDiv);
     }
 
     // Drag and resize functionality
@@ -496,17 +492,16 @@
       };
     }
 
-    function updateChartData() {
+    function prepareChartData() {
       if (
-        !myChart ||
         !gexData ||
         !gexData.strikes ||
         gexData.strikes.length === 0
       ) {
-        return;
+        return null;
       }
 
-      let chartData, chartLabels, stateChartData;
+      let chartLabels, classicData, stateData2;
 
       if (gexData.spot) {
         const sortedStrikes = [...gexData.strikes]
@@ -542,7 +537,7 @@
         }
 
         chartLabels = filteredStrikes.map((strike) => strike[0]);
-        chartData = filteredStrikes.map((strike) => strike[1]);
+        classicData = filteredStrikes.map((strike) => strike[1]);
 
         if (
           stateData &&
@@ -558,284 +553,75 @@
           sortedStateStrikes.forEach((strike) => {
             stateMap.set(strike[0], strike[3]);
           });
-          stateChartData = chartLabels.map((price) => stateMap.get(price) || 0);
+          stateData2 = chartLabels.map((price) => stateMap.get(price) || 0);
         } else {
-          stateChartData = chartLabels.map(() => 0);
+          stateData2 = chartLabels.map(() => 0);
         }
       } else {
         const sortedStrikes = [...gexData.strikes]
           .filter((strike) => strike && strike[0] != null && strike[1] != null)
           .sort((a, b) => a[0] - b[0]);
         chartLabels = sortedStrikes.map((strike) => strike[0]);
-        chartData = sortedStrikes.map((strike) => strike[1]);
-        stateChartData = chartLabels.map(() => 0);
+        classicData = sortedStrikes.map((strike) => strike[1]);
+        stateData2 = chartLabels.map(() => 0);
       }
 
-      // Recalculate x-axis scales based on new data
-      const minClassicRaw = Math.min(...chartData, 0);
-      const maxClassicRaw = Math.max(...chartData, 0);
-      const minStateRaw = Math.min(...stateChartData, 0);
-      const maxStateRaw = Math.max(...stateChartData, 0);
+      return {
+        labels: chartLabels.reverse(),
+        classic: classicData.reverse(),
+        state: stateData2.reverse()
+      };
+    }
 
-      const classicNegativeWithPadding = Math.abs(minClassicRaw) * 1.1;
-      const classicPositiveWithPadding = maxClassicRaw * 1.1;
-      const stateNegativeWithPadding = Math.abs(minStateRaw) * 1.1;
-      const statePositiveWithPadding = maxStateRaw * 1.1;
-
-      const classicMaxRange = Math.max(
-        classicNegativeWithPadding,
-        classicPositiveWithPadding
-      );
-      const stateMaxRange = Math.max(
-        stateNegativeWithPadding,
-        statePositiveWithPadding
-      );
-
-      myChart.options.scales.x.min = -classicMaxRange;
-      myChart.options.scales.x.max = classicMaxRange;
-      myChart.options.scales.x2.min = -stateMaxRange;
-      myChart.options.scales.x2.max = stateMaxRange;
-
-      myChart.data.labels = chartLabels;
-      myChart.data.datasets[0].data = chartData;
-      myChart.data.datasets[0].backgroundColor = chartData.map((val) =>
-        val >= 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
-      );
-
-      if (myChart.data.datasets[1]) {
-        myChart.data.datasets[1].data = stateChartData;
-        myChart.data.datasets[1].backgroundColor = stateChartData.map((val) =>
-          val >= 0 ? 'rgba(100, 233, 235, 1)' : 'rgba(170, 86, 249, 1)'
-        );
+    function updateChartData() {
+      if (!uplot) {
+        return;
       }
 
-      if (chartLabels.length > 0 && myChart.options.plugins.annotation) {
-        const annotations = myChart.options.plugins.annotation.annotations;
-
-        const getInterpolatedPosition = (price, labels) => {
-          if (!price || labels.length === 0) return -1;
-          let lowerIndex = -1;
-          let upperIndex = -1;
-          for (let i = 0; i < labels.length; i++) {
-            if (labels[i] <= price) lowerIndex = i;
-            if (labels[i] >= price && upperIndex === -1) upperIndex = i;
-          }
-          if (lowerIndex === -1 && upperIndex !== -1) return upperIndex;
-          if (upperIndex === -1 && lowerIndex !== -1) return lowerIndex;
-          if (lowerIndex === upperIndex) return lowerIndex;
-          const lowerPrice = labels[lowerIndex];
-          const upperPrice = labels[upperIndex];
-          const ratio = (price - lowerPrice) / (upperPrice - lowerPrice);
-          return lowerIndex + ratio;
-        };
-
-        if (gexData.spot) {
-          const spotPosition = getInterpolatedPosition(
-            gexData.spot,
-            chartLabels
-          );
-          if (annotations.spotLine && spotPosition !== -1) {
-            annotations.spotLine.yMin = spotPosition;
-            annotations.spotLine.yMax = spotPosition;
-            if (annotations.spotLine.label) {
-              annotations.spotLine.label.content = Math.round(
-                gexData.spot
-              ).toString();
-            }
-          }
-        }
-
-        if (gexData?.zero_gamma) {
-          const zeroGammaPosition = getInterpolatedPosition(
-            gexData.zero_gamma,
-            chartLabels
-          );
-          if (annotations.zeroGammaLine && zeroGammaPosition !== -1) {
-            annotations.zeroGammaLine.yMin = zeroGammaPosition;
-            annotations.zeroGammaLine.yMax = zeroGammaPosition;
-            if (annotations.zeroGammaLine.label) {
-              annotations.zeroGammaLine.label.content = Math.round(
-                gexData.zero_gamma
-              ).toString();
-            }
-          }
-        }
-
-        if (gexData?.major_pos_vol) {
-          const majorPosVolPosition = getInterpolatedPosition(
-            gexData.major_pos_vol,
-            chartLabels
-          );
-          if (annotations.majorPosVolLine && majorPosVolPosition !== -1) {
-            annotations.majorPosVolLine.yMin = majorPosVolPosition;
-            annotations.majorPosVolLine.yMax = majorPosVolPosition;
-            if (annotations.majorPosVolLine.label) {
-              annotations.majorPosVolLine.label.content = Math.round(
-                gexData.major_pos_vol
-              ).toString();
-            }
-          }
-        }
-
-        if (gexData?.major_neg_vol) {
-          const majorNegVolPosition = getInterpolatedPosition(
-            gexData.major_neg_vol,
-            chartLabels
-          );
-          if (annotations.majorNegVolLine && majorNegVolPosition !== -1) {
-            annotations.majorNegVolLine.yMin = majorNegVolPosition;
-            annotations.majorNegVolLine.yMax = majorNegVolPosition;
-            if (annotations.majorNegVolLine.label) {
-              annotations.majorNegVolLine.label.content = Math.round(
-                gexData.major_neg_vol
-              ).toString();
-            }
-          }
-        }
-
-        if (stateData?.major_long_gamma) {
-          const majorLongGammaPosition = getInterpolatedPosition(
-            stateData.major_long_gamma,
-            chartLabels
-          );
-          if (annotations.majorLongGammaLine && majorLongGammaPosition !== -1) {
-            annotations.majorLongGammaLine.yMin = majorLongGammaPosition;
-            annotations.majorLongGammaLine.yMax = majorLongGammaPosition;
-            if (annotations.majorLongGammaLine.label) {
-              annotations.majorLongGammaLine.label.content = Math.round(
-                stateData.major_long_gamma
-              ).toString();
-            }
-          }
-        }
-
-        if (stateData?.major_short_gamma) {
-          const majorShortGammaPosition = getInterpolatedPosition(
-            stateData.major_short_gamma,
-            chartLabels
-          );
-          if (
-            annotations.majorShortGammaLine &&
-            majorShortGammaPosition !== -1
-          ) {
-            annotations.majorShortGammaLine.yMin = majorShortGammaPosition;
-            annotations.majorShortGammaLine.yMax = majorShortGammaPosition;
-            if (annotations.majorShortGammaLine.label) {
-              annotations.majorShortGammaLine.label.content = Math.round(
-                stateData.major_short_gamma
-              ).toString();
-            }
-          }
-        }
+      const data = prepareChartData();
+      if (!data) {
+        return;
       }
 
-      myChart.update('none');
+      // uPlot data format: [x-axis-values, series1-values, series2-values, ...]
+      // For horizontal bars, we need to swap x and y
+      uplot.setData([
+        data.labels,
+        data.classic,
+        data.state
+      ]);
     }
 
     function redrawChart() {
-      if (myChart) {
-        myChart.destroy();
-        canvas.remove();
-        const newCanvas = document.createElement('canvas');
-        newCanvas.className = 'overlay-chart';
-        const containerWidth = parseInt(
-          window.getComputedStyle(container).width,
-          10
-        );
-        const containerHeight = parseInt(
-          window.getComputedStyle(container).height,
-          10
-        );
-        newCanvas.width = containerWidth - 20;
-        newCanvas.height = containerHeight - 20;
-        container.appendChild(newCanvas);
-        canvas = newCanvas;
-        myChart = createChart();
+      if (uplot) {
+        uplot.destroy();
+        chartDiv.innerHTML = '';
+        uplot = createChart();
       }
     }
 
     function createChart() {
-      const ctx = canvas.getContext('2d');
-      let chartData, chartLabels, stateChartData;
-      let spotPrice = null;
+      if (!chartDiv) return null;
 
-      if (
-        gexData &&
-        gexData.strikes &&
-        gexData.strikes.length > 0 &&
-        gexData.spot
-      ) {
-        spotPrice = gexData.spot;
-        const sortedStrikes = [...gexData.strikes]
-          .filter((strike) => strike && strike[0] != null && strike[1] != null)
-          .sort((a, b) => a[0] - b[0]);
-        const annotationRange = getAnnotationRange();
-
-        let filteredStrikes;
-        if (annotationRange) {
-          const minIndex = sortedStrikes.findIndex(
-            (s) => s[0] >= annotationRange.min
-          );
-          const maxIndex = sortedStrikes.findIndex(
-            (s) => s[0] > annotationRange.max
-          );
-          const startIndex = Math.max(0, minIndex - config.levelsBelowAnnotation);
-          const endIndex =
-            maxIndex === -1
-              ? sortedStrikes.length
-              : Math.min(sortedStrikes.length, maxIndex + config.levelsAboveAnnotation);
-          filteredStrikes = sortedStrikes.slice(startIndex, endIndex);
-        } else {
-          const spot = gexData.spot;
-          const strikesBelow = sortedStrikes.filter(
-            (strike) => strike[0] < spot
-          );
-          const strikesAbove = sortedStrikes.filter(
-            (strike) => strike[0] >= spot
-          );
-          const closestBelow = strikesBelow.slice(-config.barLevels);
-          const closestAbove = strikesAbove.slice(0, config.barLevels);
-          filteredStrikes = [...closestBelow, ...closestAbove];
-        }
-
-        chartLabels = filteredStrikes.map((strike) => strike[0]);
-        chartData = filteredStrikes.map((strike) => strike[1]);
-
-        if (
-          stateData &&
-          stateData.mini_contracts &&
-          stateData.mini_contracts.length > 0
-        ) {
-          const sortedStateStrikes = [...stateData.mini_contracts]
-            .filter(
-              (strike) => strike && strike[0] != null && strike[3] != null
-            )
-            .sort((a, b) => a[0] - b[0]);
-          const stateMap = new Map();
-          sortedStateStrikes.forEach((strike) => {
-            stateMap.set(strike[0], strike[3]);
-          });
-          stateChartData = chartLabels.map((price) => stateMap.get(price) || 0);
-        } else {
-          stateChartData = chartLabels.map(() => 0);
-        }
-      } else if (gexData && gexData.strikes && gexData.strikes.length > 0) {
-        const sortedStrikes = [...gexData.strikes]
-          .filter((strike) => strike && strike[0] != null && strike[1] != null)
-          .sort((a, b) => a[0] - b[0]);
-        chartLabels = sortedStrikes.map((strike) => strike[0]);
-        chartData = sortedStrikes.map((strike) => strike[1]);
-        stateChartData = chartLabels.map(() => 0);
-      } else {
-        chartLabels = [];
-        chartData = [];
-        stateChartData = [];
+      let data = prepareChartData();
+      if (!data) {
+        // Return empty chart
+        data = {
+          labels: [],
+          classic: [],
+          state: []
+        };
       }
 
-      const minClassicRaw = Math.min(...chartData, 0);
-      const maxClassicRaw = Math.max(...chartData, 0);
-      const minStateRaw = Math.min(...stateChartData, 0);
-      const maxStateRaw = Math.max(...stateChartData, 0);
+      const containerRect = container.getBoundingClientRect();
+      const width = Math.max(200, containerRect.width - 10);
+      const height = Math.max(200, containerRect.height - 10);
+
+      // Calculate scales
+      const minClassicRaw = Math.min(...data.classic, 0);
+      const maxClassicRaw = Math.max(...data.classic, 0);
+      const minStateRaw = Math.min(...data.state, 0);
+      const maxStateRaw = Math.max(...data.state, 0);
 
       const classicNegativeWithPadding = Math.abs(minClassicRaw) * 1.1;
       const classicPositiveWithPadding = maxClassicRaw * 1.1;
@@ -845,335 +631,331 @@
       const classicMaxRange = Math.max(
         classicNegativeWithPadding,
         classicPositiveWithPadding
-      );
+      ) || 1;
       const stateMaxRange = Math.max(
         stateNegativeWithPadding,
         statePositiveWithPadding
-      );
+      ) || 1;
 
-      const minClassic = -classicMaxRange;
-      const maxClassic = classicMaxRange;
-      const x2Min = -stateMaxRange;
-      const x2Max = stateMaxRange;
+      // uPlot options
+      const opts = {
+        width: width,
+        height: height,
+        padding: [10, 5, 5, 5],
+        scales: {
+          x: {
+            time: false,
+            range: [-classicMaxRange, classicMaxRange],
+          },
+          y: {
+            range: (u, dataMin, dataMax) => {
+              // Return the index range
+              return [0, data.labels.length - 1];
+            },
+          },
+        },
+        axes: [
+          {
+            show: false,
+          },
+          {
+            show: false,
+          },
+        ],
+        series: [
+          {
+            label: "Price",
+          },
+          {
+            label: "GEX Volume",
+            stroke: "transparent",
+            width: 0,
+            points: { show: false },
+          },
+          {
+            label: "State Volume",
+            stroke: "transparent",
+            scale: "x2",
+            width: 0,
+            points: { show: false },
+          },
+        ],
+        hooks: {
+          draw: [
+            (u) => {
+              const ctx = u.ctx;
 
-      const getInterpolatedPosition = (price, labels) => {
-        if (!price || labels.length === 0) return -1;
-        let lowerIndex = -1;
-        let upperIndex = -1;
-        for (let i = 0; i < labels.length; i++) {
-          if (labels[i] <= price) lowerIndex = i;
-          if (labels[i] >= price && upperIndex === -1) upperIndex = i;
+              // Adjust font size based on device pixel ratio
+              const dpr = window.devicePixelRatio || 1;
+              const fontSize = Math.round(10 * dpr);
+              const labelPadding = Math.round(4 * dpr);
+              const labelHeight = Math.round(16 * dpr);
+              const labelYOffset = Math.round(8 * dpr);
+              const labelTextYOffset = Math.round(4 * dpr);
+
+              // Draw bars for GEX Volume (series 1)
+              const classicData = u.data[1];
+              const stateDataArray = u.data[2];
+              const barHeight = u.bbox.height / data.labels.length;
+              const barPadding = barHeight * 0.65;
+              const maxBarHeight = 3 * dpr; // Scale max bar height with device pixel ratio
+              const actualBarHeight = Math.min(maxBarHeight, (barHeight - barPadding) / 2); // Split height for stacking
+              const positiveBarInset = 15; // 15px inset on positive side to avoid label overlap
+
+              // Draw classic bars (top half of each level)
+              for (let i = 0; i < classicData.length; i++) {
+                const xVal = classicData[i];
+                if (xVal === null || xVal === undefined) continue;
+
+                const yPos = u.bbox.top + i * barHeight + barPadding / 2;
+                const x0 = u.valToPos(0, 'x', true);
+                const x1 = u.valToPos(xVal, 'x', true);
+
+                let barWidth, barX;
+                if (xVal >= 0) {
+                  // Positive: inset 15px from the right
+                  barWidth = Math.max(0, Math.abs(x1 - x0) - positiveBarInset);
+                  barX = x0;
+                } else {
+                  // Negative: no inset
+                  barWidth = Math.abs(x1 - x0);
+                  barX = x1;
+                }
+
+                ctx.fillStyle = xVal >= 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)';
+                ctx.fillRect(barX, yPos, barWidth, actualBarHeight);
+              }
+
+              // Draw state bars (bottom half of each level)
+              for (let i = 0; i < stateDataArray.length; i++) {
+                const xVal = stateDataArray[i];
+                if (xVal === null || xVal === undefined) continue;
+
+                const yPos = u.bbox.top + i * barHeight + barPadding / 2 + actualBarHeight;
+
+                // Use x2 scale for state data
+                const scale = u.scales.x2;
+                const pctX = (xVal - scale.min) / (scale.max - scale.min);
+                const x1 = u.bbox.left + pctX * u.bbox.width;
+                const pct0 = (0 - scale.min) / (scale.max - scale.min);
+                const x0 = u.bbox.left + pct0 * u.bbox.width;
+
+                let barWidth, barX;
+                if (xVal >= 0) {
+                  // Positive: inset 15px from the right
+                  barWidth = Math.max(0, Math.abs(x1 - x0) - positiveBarInset);
+                  barX = x0;
+                } else {
+                  // Negative: no inset
+                  barWidth = Math.abs(x1 - x0);
+                  barX = x1;
+                }
+
+                ctx.fillStyle = xVal >= 0 ? 'rgba(100, 233, 235, 1)' : 'rgba(170, 86, 249, 1)';
+                ctx.fillRect(barX, yPos, barWidth, actualBarHeight);
+              }
+
+              // Draw zero line
+              const zeroX = u.valToPos(0, 'x', true);
+              ctx.strokeStyle = 'rgba(215, 215, 215, 0.5)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(zeroX, u.bbox.top);
+              ctx.lineTo(zeroX, u.bbox.top + u.bbox.height);
+              ctx.stroke();
+
+              // Function to find interpolated Y position (labels are in descending order now)
+              const getInterpolatedYPos = (price, labels) => {
+                if (!price || labels.length === 0) return -1;
+                let upperIndex = -1;
+                let lowerIndex = -1;
+                for (let i = 0; i < labels.length; i++) {
+                  if (labels[i] >= price) upperIndex = i;
+                  if (labels[i] <= price && lowerIndex === -1) lowerIndex = i;
+                }
+                if (upperIndex === -1 && lowerIndex !== -1) return lowerIndex;
+                if (lowerIndex === -1 && upperIndex !== -1) return upperIndex;
+                if (upperIndex === lowerIndex) return upperIndex;
+                const upperPrice = labels[upperIndex];
+                const lowerPrice = labels[lowerIndex];
+                const ratio = (price - upperPrice) / (lowerPrice - upperPrice);
+                return upperIndex + ratio;
+              };
+
+              // Draw spot line
+              if (gexData?.spot && data.labels.length > 0) {
+                const spotIdx = getInterpolatedYPos(gexData.spot, data.labels);
+                if (spotIdx !== -1) {
+                  const spotY = u.bbox.top + spotIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = 'rgb(0, 0, 0)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([5, 5]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, spotY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, spotY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  // Draw label
+                  const text = Math.round(gexData.spot).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, spotY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = 'rgb(0, 0, 0)';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), spotY + labelTextYOffset);
+                }
+              }
+
+              // Draw zero gamma line
+              if (gexData?.zero_gamma && data.labels.length > 0) {
+                const zgIdx = getInterpolatedYPos(gexData.zero_gamma, data.labels);
+                if (zgIdx !== -1) {
+                  const zgY = u.bbox.top + zgIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = '#FCB103';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([2, 2]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, zgY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, zgY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  const text = Math.round(gexData.zero_gamma).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, zgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = '#FCB103';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), zgY + labelTextYOffset);
+                }
+              }
+
+              // Draw major pos vol line
+              if (gexData?.major_pos_vol && data.labels.length > 0) {
+                const mpvIdx = getInterpolatedYPos(gexData.major_pos_vol, data.labels);
+                if (mpvIdx !== -1) {
+                  const mpvY = u.bbox.top + mpvIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = 'rgb(34, 197, 94)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([2, 2]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, mpvY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, mpvY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  const text = Math.round(gexData.major_pos_vol).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mpvY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = 'rgb(34, 197, 94)';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mpvY + labelTextYOffset);
+                }
+              }
+
+              // Draw major neg vol line
+              if (gexData?.major_neg_vol && data.labels.length > 0) {
+                const mnvIdx = getInterpolatedYPos(gexData.major_neg_vol, data.labels);
+                if (mnvIdx !== -1) {
+                  const mnvY = u.bbox.top + mnvIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = 'rgb(239, 68, 68)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([2, 2]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, mnvY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, mnvY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  const text = Math.round(gexData.major_neg_vol).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mnvY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = 'rgb(239, 68, 68)';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mnvY + labelTextYOffset);
+                }
+              }
+
+              // Draw major long gamma line
+              if (stateData?.major_long_gamma && data.labels.length > 0) {
+                const mlgIdx = getInterpolatedYPos(stateData.major_long_gamma, data.labels);
+                if (mlgIdx !== -1) {
+                  const mlgY = u.bbox.top + mlgIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = 'rgb(100, 233, 235)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([2, 2]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, mlgY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, mlgY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  const text = Math.round(stateData.major_long_gamma).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mlgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = 'rgb(49, 234, 237)';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mlgY + labelTextYOffset);
+                }
+              }
+
+              // Draw major short gamma line
+              if (stateData?.major_short_gamma && data.labels.length > 0) {
+                const msgIdx = getInterpolatedYPos(stateData.major_short_gamma, data.labels);
+                if (msgIdx !== -1) {
+                  const msgY = u.bbox.top + msgIdx * barHeight + barHeight / 2;
+                  ctx.strokeStyle = 'rgb(170, 86, 249)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([2, 2]);
+                  ctx.beginPath();
+                  ctx.moveTo(u.bbox.left, msgY);
+                  ctx.lineTo(u.bbox.left + u.bbox.width, msgY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  const text = Math.round(stateData.major_short_gamma).toString();
+                  ctx.font = `bold ${fontSize}px sans-serif`;
+                  const textWidth = ctx.measureText(text).width;
+                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, msgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillStyle = 'rgb(170, 86, 249)';
+                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), msgY + labelTextYOffset);
+                }
+              }
+            }
+          ]
         }
-        if (lowerIndex === -1 && upperIndex !== -1) return upperIndex;
-        if (upperIndex === -1 && lowerIndex !== -1) return lowerIndex;
-        if (lowerIndex === upperIndex) return lowerIndex;
-        const lowerPrice = labels[lowerIndex];
-        const upperPrice = labels[upperIndex];
-        const ratio = (price - lowerPrice) / (upperPrice - lowerPrice);
-        return lowerIndex + ratio;
       };
 
-      let spotPosition = -1;
-      let zeroGammaPosition = -1;
-      let majorPosVolPosition = -1;
-      let majorNegVolPosition = -1;
-      let majorLongGammaPosition = -1;
-      let majorShortGammaPosition = -1;
+      // Add x2 scale for state data
+      opts.scales.x2 = {
+        time: false,
+        range: [-stateMaxRange, stateMaxRange],
+      };
 
-      if (chartLabels.length > 0) {
-        if (spotPrice)
-          spotPosition = getInterpolatedPosition(spotPrice, chartLabels);
-        if (gexData?.zero_gamma)
-          zeroGammaPosition = getInterpolatedPosition(
-            gexData.zero_gamma,
-            chartLabels
-          );
-        if (gexData?.major_pos_vol)
-          majorPosVolPosition = getInterpolatedPosition(
-            gexData.major_pos_vol,
-            chartLabels
-          );
-        if (gexData?.major_neg_vol)
-          majorNegVolPosition = getInterpolatedPosition(
-            gexData.major_neg_vol,
-            chartLabels
-          );
-        if (stateData?.major_long_gamma)
-          majorLongGammaPosition = getInterpolatedPosition(
-            stateData.major_long_gamma,
-            chartLabels
-          );
-        if (stateData?.major_short_gamma)
-          majorShortGammaPosition = getInterpolatedPosition(
-            stateData.major_short_gamma,
-            chartLabels
-          );
-      }
+      const chart = new uPlot(opts, [
+        data.labels,
+        data.classic,
+        data.state
+      ], chartDiv);
 
-      return new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: chartLabels,
-          datasets: [
-            {
-              label: 'GEX Volume',
-              data: chartData,
-              backgroundColor: chartData.map((val) =>
-                val >= 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
-              ),
-              borderWidth: 0,
-              xAxisID: 'x',
-            },
-            {
-              label: 'State Volume',
-              data: stateChartData,
-              backgroundColor: stateChartData.map((val) =>
-                val >= 0 ? 'rgba(49, 234, 237, 1)' : 'rgba(170, 86, 249, 1)'
-              ),
-              borderWidth: 0,
-              xAxisID: 'x2',
-            },
-          ],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: false,
-          maintainAspectRatio: false,
-          animation: false,
-          transitions: {
-            active: {
-              animation: {
-                duration: 0,
-              },
-            },
-          },
-          plugins: {
-            legend: {
-              display: false,
-            },
-            annotation: {
-              annotations: {
-                zeroLine: {
-                  type: 'line',
-                  xMin: 0,
-                  xMax: 0,
-                  borderColor: 'rgba(215, 215, 215, 0.5)',
-                  borderWidth: 1,
-                },
-                ...(spotPrice && spotPosition !== -1
-                  ? {
-                      spotLine: {
-                        type: 'line',
-                        yMin: spotPosition,
-                        yMax: spotPosition,
-                        borderColor: 'rgb(0, 0, 0)',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
-                        label: {
-                          display: true,
-                          content: Math.round(spotPrice).toString(),
-                          position: 'end',
-                          color: 'rgb(0, 0, 0)',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-                ...(gexData?.zero_gamma && zeroGammaPosition !== -1
-                  ? {
-                      zeroGammaLine: {
-                        type: 'line',
-                        yMin: zeroGammaPosition,
-                        yMax: zeroGammaPosition,
-                        borderColor: '#FCB103',
-                        borderWidth: 1,
-                        borderDash: [2, 2],
-                        label: {
-                          display: true,
-                          content: Math.round(gexData.zero_gamma).toString(),
-                          position: 'end',
-                          color: '#FCB103',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                            textStrokeWidth: 0,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-                ...(gexData?.major_pos_vol && majorPosVolPosition !== -1
-                  ? {
-                      majorPosVolLine: {
-                        type: 'line',
-                        yMin: majorPosVolPosition,
-                        yMax: majorPosVolPosition,
-                        borderColor: 'rgb(34, 197, 94)',
-                        borderWidth: 1,
-                        borderDash: [2, 2],
-                        label: {
-                          display: true,
-                          content: Math.round(gexData.major_pos_vol).toString(),
-                          position: 'end',
-                          color: 'rgb(34, 197, 94)',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-                ...(gexData?.major_neg_vol && majorNegVolPosition !== -1
-                  ? {
-                      majorNegVolLine: {
-                        type: 'line',
-                        yMin: majorNegVolPosition,
-                        yMax: majorNegVolPosition,
-                        borderColor: 'rgb(239, 68, 68)',
-                        borderWidth: 1,
-                        borderDash: [2, 2],
-                        label: {
-                          display: true,
-                          content: Math.round(gexData.major_neg_vol).toString(),
-                          position: 'end',
-                          color: 'rgb(239, 68, 68)',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-                ...(stateData?.major_long_gamma && majorLongGammaPosition !== -1
-                  ? {
-                      majorLongGammaLine: {
-                        type: 'line',
-                        yMin: majorLongGammaPosition,
-                        yMax: majorLongGammaPosition,
-                        borderColor: 'rgb(100, 233, 235)',
-                        borderWidth: 1,
-                        borderDash: [2, 2],
-                        label: {
-                          display: true,
-                          content: Math.round(
-                            stateData.major_long_gamma
-                          ).toString(),
-                          position: 'end',
-                          color: 'rgb(49, 234, 237)',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-                ...(stateData?.major_short_gamma &&
-                majorShortGammaPosition !== -1
-                  ? {
-                      majorShortGammaLine: {
-                        type: 'line',
-                        yMin: majorShortGammaPosition,
-                        yMax: majorShortGammaPosition,
-                        borderColor: 'rgb(170, 86, 249)',
-                        borderWidth: 1,
-                        borderDash: [2, 2],
-                        label: {
-                          display: true,
-                          content: Math.round(
-                            stateData.major_short_gamma
-                          ).toString(),
-                          position: 'end',
-                          color: 'rgb(170, 86, 249)',
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          yAdjust: 0,
-                          padding: 1,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    }
-                  : {}),
-              },
-            },
-          },
-          barThickness: 'flex',
-          categoryPercentage: 0.5,
-          barPercentage: 0.3,
-          scales: {
-            y: {
-              reverse: true,
-              ticks: {
-                display: false,
-              },
-              grid: {
-                display: false,
-              },
-              border: {
-                display: false,
-              },
-            },
-            x: {
-              type: 'linear',
-              position: 'bottom',
-              min: minClassic,
-              max: maxClassic,
-              ticks: {
-                display: false,
-              },
-              grid: {
-                display: false,
-              },
-              border: {
-                display: false,
-              },
-            },
-            x2: {
-              type: 'linear',
-              position: 'top',
-              min: x2Min,
-              max: x2Max,
-              ticks: {
-                display: false,
-              },
-              grid: {
-                display: false,
-              },
-              border: {
-                display: false,
-              },
-            },
-          },
-        },
-      });
+      return chart;
     }
 
     function initChart() {
-      // Only initialize if we have a canvas (i.e., we have an API key)
+      // Only initialize if we have a chartDiv (i.e., we have an API key)
       if (!API_KEY || API_KEY === '') {
         return;
       }
-      if (typeof Chart === 'undefined') {
+      if (typeof uPlot === 'undefined') {
         setTimeout(initChart, 100);
         return;
       }
-      myChart = createChart();
+      uplot = createChart();
     }
 
     initChart();
@@ -1235,7 +1017,7 @@
     }
 
     function updateChart() {
-      if (myChart) {
+      if (uplot) {
         if (isFirstDataLoad) {
           isFirstDataLoad = false;
           redrawChart();

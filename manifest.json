@@ -17,13 +17,13 @@
       "matches": [
         "https://www.tradingview.com/chart/*"
       ],
-      "js": ["chart.min.js", "chartjs-plugin-annotation.min.js", "content.js"],
-      "css": ["styles.css"]
+      "js": ["uPlot.iife.js", "content.js"],
+      "css": ["styles.css", "uPlot.min.css"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["chart.min.js"],
+      "resources": ["uPlot.iife.js"],
       "matches": ["https://www.tradingview.com/*"]
     }
   ]
