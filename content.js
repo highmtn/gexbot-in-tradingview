@@ -642,6 +642,9 @@
         width: width,
         height: height,
         padding: [10, 5, 5, 5],
+        legend: {
+          show: false,
+        },
         scales: {
           x: {
             time: false,
