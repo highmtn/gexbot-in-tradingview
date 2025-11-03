@@ -617,25 +617,7 @@
       const width = Math.max(200, containerRect.width - 10);
       const height = Math.max(200, containerRect.height - 10);
 
-      // Calculate scales
-      const minClassicRaw = Math.min(...data.classic, 0);
-      const maxClassicRaw = Math.max(...data.classic, 0);
-      const minStateRaw = Math.min(...data.state, 0);
-      const maxStateRaw = Math.max(...data.state, 0);
-
-      const classicNegativeWithPadding = Math.abs(minClassicRaw) * 1.1;
-      const classicPositiveWithPadding = maxClassicRaw * 1.1;
-      const stateNegativeWithPadding = Math.abs(minStateRaw) * 1.1;
-      const statePositiveWithPadding = maxStateRaw * 1.1;
-
-      const classicMaxRange = Math.max(
-        classicNegativeWithPadding,
-        classicPositiveWithPadding
-      ) || 1;
-      const stateMaxRange = Math.max(
-        stateNegativeWithPadding,
-        statePositiveWithPadding
-      ) || 1;
+      // Note: scales are now dynamically calculated in the range functions
 
       // uPlot options
       const opts = {
@@ -648,7 +630,16 @@
         scales: {
           x: {
             time: false,
-            range: [-classicMaxRange, classicMaxRange],
+            range: (u, dataMin, dataMax) => {
+              // Dynamically calculate range based on current data
+              const currentClassicData = u.data[1] || [];
+              const minClassic = Math.min(...currentClassicData.filter(v => v != null), 0);
+              const maxClassic = Math.max(...currentClassicData.filter(v => v != null), 0);
+              const classicNeg = Math.abs(minClassic) * 1.1;
+              const classicPos = maxClassic * 1.1;
+              const classicMax = Math.max(classicNeg, classicPos) || 1;
+              return [-classicMax, classicMax];
+            },
           },
           y: {
             range: (u, dataMin, dataMax) => {
@@ -937,7 +928,16 @@
       // Add x2 scale for state data
       opts.scales.x2 = {
         time: false,
-        range: [-stateMaxRange, stateMaxRange],
+        range: (u, dataMin, dataMax) => {
+          // Dynamically calculate range based on current state data
+          const currentStateData = u.data[2] || [];
+          const minState = Math.min(...currentStateData.filter(v => v != null), 0);
+          const maxState = Math.max(...currentStateData.filter(v => v != null), 0);
+          const stateNeg = Math.abs(minState) * 1.1;
+          const statePos = maxState * 1.1;
+          const stateMax = Math.max(stateNeg, statePos) || 1;
+          return [-stateMax, stateMax];
+        },
       };
 
       const chart = new uPlot(opts, [
