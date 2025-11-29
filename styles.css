@@ -14,24 +14,34 @@
   background-color: rgba(242, 247, 255, .5);
 }
 
-.chart-resize-handle-top-right {
+.chart-close-button {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 5px;
+  right: 5px;
   width: 20px;
   height: 20px;
-  cursor: nesw-resize;
-  z-index: 10001;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  color: #666;
+  text-align: center;
+  line-height: 18px;
+  user-select: none;
+  z-index: 10002;
+  background-color: rgba(240, 240, 240, 0.9);
+  border: 1px solid rgba(220, 220, 220, 0.9);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
-.chart-resize-handle-bottom-right {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20px;
-  height: 20px;
-  cursor: nwse-resize;
-  z-index: 10001;
+.chart-overlay-container:hover .chart-close-button {
+  opacity: 1;
+}
+
+.chart-close-button:hover {
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
 }
 
 .chart-classic-link {

@@ -132,12 +132,11 @@
     container.style.bottom = config.position.bottom;
     container.style.left = config.position.left;
 
-    // Create resize handles
-    const resizeHandleTopRight = document.createElement('div');
-    resizeHandleTopRight.className = 'chart-resize-handle-top-right';
-
-    const resizeHandleBottomRight = document.createElement('div');
-    resizeHandleBottomRight.className = 'chart-resize-handle-bottom-right';
+    // Create close button
+    const closeButton = document.createElement('div');
+    closeButton.className = 'chart-close-button';
+    closeButton.innerHTML = '×';
+    closeButton.title = 'Close chart';
 
     // Create Classic link button
     const classicLink = document.createElement('a');
@@ -182,8 +181,7 @@
     sumDisplay.appendChild(sumVolValue);
     sumDisplay.appendChild(sumOiValue);
 
-    container.appendChild(resizeHandleTopRight);
-    container.appendChild(resizeHandleBottomRight);
+    container.appendChild(closeButton);
     container.appendChild(tickerLabel);
     container.appendChild(sumDisplay);
     container.appendChild(classicLink);
@@ -333,14 +331,11 @@
       container.appendChild(chartDiv);
     }
 
-    // Drag and resize functionality
+    // Drag functionality
     let isDragging = false;
-    let isResizing = false;
-    let resizeCorner = null;
     let currentX, currentY, initialX, initialY;
     let xOffset = 0;
     let yOffset = 0;
-    let resizeStartX, resizeStartY, startWidth, startHeight;
 
     // Function to open URL in existing tab or new tab
     function openOrSwitchToTab(url) {
@@ -365,22 +360,24 @@
       openOrSwitchToTab(config.stateGexbotUrl);
     });
 
+    closeButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      container.remove();
+      // Remove from chartInstances array
+      const instanceIndex = chartInstances.findIndex(inst => inst.container === container);
+      if (instanceIndex !== -1) {
+        chartInstances.splice(instanceIndex, 1);
+      }
+    });
+
     container.addEventListener('mousedown', dragStart);
-    resizeHandleTopRight.addEventListener('mousedown', (e) =>
-      resizeStart(e, 'top-right')
-    );
-    resizeHandleBottomRight.addEventListener('mousedown', (e) =>
-      resizeStart(e, 'bottom-right')
-    );
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
     function dragStart(e) {
       if (
-        e.target === resizeHandleTopRight ||
-        e.target.closest('.chart-resize-handle-top-right') ||
-        e.target === resizeHandleBottomRight ||
-        e.target.closest('.chart-resize-handle-bottom-right') ||
+        e.target === closeButton ||
+        e.target.closest('.chart-close-button') ||
         e.target === classicLink ||
         e.target.closest('.chart-classic-link') ||
         e.target === stateLink ||
@@ -397,36 +394,6 @@
       e.preventDefault();
     }
 
-    function resizeStart(e, corner) {
-      isResizing = true;
-      resizeCorner = corner;
-      resizeStartX = e.clientX;
-      resizeStartY = e.clientY;
-      startWidth = parseInt(window.getComputedStyle(container).width, 10);
-      startHeight = parseInt(window.getComputedStyle(container).height, 10);
-
-      const rect = container.getBoundingClientRect();
-
-      if (corner === 'bottom-right') {
-        container.style.top = rect.top + 'px';
-        container.style.bottom = 'auto';
-        container.style.left = rect.left + 'px';
-        container.style.transform = 'none';
-        xOffset = 0;
-        yOffset = 0;
-      } else if (corner === 'top-right') {
-        container.style.bottom = window.innerHeight - rect.bottom + 'px';
-        container.style.top = 'auto';
-        container.style.left = rect.left + 'px';
-        container.style.transform = 'none';
-        xOffset = 0;
-        yOffset = 0;
-      }
-
-      e.stopPropagation();
-      e.preventDefault();
-    }
-
     function handleMouseMove(e) {
       if (isDragging) {
         e.preventDefault();
@@ -435,20 +402,6 @@
         xOffset = currentX;
         yOffset = currentY;
         setTranslate(currentX, currentY, container);
-      } else if (isResizing) {
-        e.preventDefault();
-
-        if (resizeCorner === 'top-right') {
-          const width = startWidth + (e.clientX - resizeStartX);
-          const height = startHeight - (e.clientY - resizeStartY);
-          container.style.width = Math.max(200, width) + 'px';
-          container.style.height = Math.max(200, height) + 'px';
-        } else if (resizeCorner === 'bottom-right') {
-          const width = startWidth + (e.clientX - resizeStartX);
-          const height = startHeight + (e.clientY - resizeStartY);
-          container.style.width = Math.max(200, width) + 'px';
-          container.style.height = Math.max(200, height) + 'px';
-        }
       }
     }
 
@@ -459,13 +412,7 @@
         container.style.cursor = '';
       }
 
-      if (isResizing) {
-        redrawChart();
-      }
-
       isDragging = false;
-      isResizing = false;
-      resizeCorner = null;
     }
 
     function setTranslate(xPos, yPos, el) {
