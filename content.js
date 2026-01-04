@@ -88,35 +88,35 @@
     // MES - show ES_SPX and SPY
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
-        createChartConfig('ES_SPX', { bottom: '380px', left: '65px' }, 15, 4, 4),
-        createChartConfig('SPY', { bottom: '130px', left: '65px' }, 15, 4, 4),
+        createChartConfig('ES_SPX', { top: '45px', left: '5px' }, 15, 4, 4),
+        createChartConfig('SPY', { top: '290px', left: '5px' }, 15, 4, 4),
       ];
     }
 
     // MNQ - show NQ_NDX and QQQ
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
-        createChartConfig('NQ_NDX', { bottom: '380px', left: '65px' }, 25, 5, 5),
-        createChartConfig('QQQ', { bottom: '130px', left: '65px' }, 25, 4, 4),
+        createChartConfig('NQ_NDX', { top: '45px', left: '5px' }, 25, 5, 5),
+        createChartConfig('QQQ', { top: '290px', left: '5px' }, 25, 4, 4),
       ];
     }
 
     // M2K - show RUT and IWM
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
-        createChartConfig('RUT', { bottom: '380px', left: '65px' }, 8, 3, 3),
-        createChartConfig('IWM', { bottom: '130px', left: '65px' }, 8, 3, 3),
+        createChartConfig('RUT', { top: '45px', left: '5px' }, 8, 3, 3),
+        createChartConfig('IWM', { top: '290px', left: '5px' }, 8, 3, 3),
       ];
     }
 
     // GLD - only one chart
     if (currentUrl.includes('/chart/XxfKvVMV/')) {
-      return [createChartConfig('GLD', { bottom: '130px', left: '65px' }, 10, 3, 3)];
+      return [createChartConfig('GLD', { top: '45px', left: '5px' }, 10, 3, 3)];
     }
 
     // MCL - only one chart (USO with custom 3 level limit)
     if (currentUrl.includes('/chart/kkaSjk8Y/')) {
-      return [createChartConfig('USO', { bottom: '130px', left: '65px' }, 10, 3, 3)];
+      return [createChartConfig('USO', { top: '260px', left: '5px' }, 10, 3, 3)];
     }
 
     // No match - return empty array
@@ -129,7 +129,7 @@
     const container = document.createElement('div');
     container.className = 'chart-overlay-container';
     container.id = `chart-overlay-container-${index}`;
-    container.style.bottom = config.position.bottom;
+    container.style.top = config.position.top;
     container.style.left = config.position.left;
 
     // Create close button

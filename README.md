@@ -5,7 +5,7 @@ A Chrome extension that displays Gexbot gamma exposure (GEX) data as interactive
 ## Features
 
 - **Real-time GEX Data**: Displays Classic GEX and State Gamma data from Gexbot API
-- **Multiple Charts**: Supports multiple symbol configurations (ES/SPX, NQ/NDX, RUT/IWM, GLD, USO)
+- **Multiple Charts**: Supports multiple symbol configurations (ES/SPX, NQ/NDX, RUT/IWM, MGC, USO)
 - **Interactive Overlays**: Draggable and resizable chart containers
 - **API Key Management**: Secure storage of your Gexbot API key via extension popup or inline forms
 - **Dynamic Updates**: Auto-refresh data every 5 seconds without page reload
@@ -28,7 +28,7 @@ The extension automatically detects the following TradingView chart URLs (which 
 | `/chart/RwyW88xf/` | ES_SPX and SPY    |
 | `/chart/WTxk3Mhm/` | NQ_NDX and QQQ    |
 | `/chart/2quwgD8W/` | RUT and IWM       |
-| `/chart/XxfKvVMV/` | GLD               |
+| `/chart/XxfKvVMV/` | MGC               |
 | `/chart/kkaSjk8Y/` | USO               |
 
 ## Usage
