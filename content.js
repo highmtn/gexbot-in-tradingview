@@ -89,7 +89,7 @@
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
         createChartConfig('ES_SPX', { top: '45px', left: '5px' }, 15, 4, 4),
-        createChartConfig('SPY', { top: '45px', left: '255px' }, 15, 4, 4),
+        createChartConfig('SPY', { top: '45px', left: '210px' }, 15, 2,2),
       ];
     }
 
@@ -97,7 +97,7 @@
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
         createChartConfig('NQ_NDX', { top: '45px', left: '5px' }, 25, 5, 5),
-        createChartConfig('QQQ', { top: '45px', left: '255px' }, 25, 4, 4),
+        createChartConfig('QQQ', { top: '45px', left: '210px' }, 25, 2,2),
       ];
     }
 
@@ -105,18 +105,18 @@
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
         createChartConfig('RUT', { top: '45px', left: '5px' }, 8, 3, 3),
-        createChartConfig('IWM', { top: '45px', left: '255px' }, 8, 3, 3),
+        createChartConfig('IWM', { top: '45px', left: '210px' }, 8, 2,2),
       ];
     }
 
     // GLD - only one chart
     if (currentUrl.includes('/chart/XxfKvVMV/')) {
-      return [createChartConfig('GLD', { top: '45px', left: '5px' }, 10, 3, 3)];
+      return [createChartConfig('GLD', { top: '45px', left: '5px' }, 10, 2,2)];
     }
 
     // MCL - only one chart (USO with custom 3 level limit)
     if (currentUrl.includes('/chart/kkaSjk8Y/')) {
-      return [createChartConfig('USO', { top: '260px', left: '5px' }, 10, 3, 3)];
+      return [createChartConfig('USO', { top: '260px', left: '5px' }, 10,2, 2)];
     }
 
     // No match - return empty array
@@ -463,11 +463,11 @@
           const maxIndex = sortedStrikes.findIndex(
             (s) => s[0] > annotationRange.max
           );
-          const startIndex = Math.max(0, minIndex - config.levelsBelowAnnotation);
+          const startIndex = Math.max(0, minIndex - 2);
           const endIndex =
             maxIndex === -1
               ? sortedStrikes.length
-              : Math.min(sortedStrikes.length, maxIndex + config.levelsAboveAnnotation);
+              : Math.min(sortedStrikes.length, maxIndex + 2);
           filteredStrikes = sortedStrikes.slice(startIndex, endIndex);
         } else {
           const spot = gexData.spot;
@@ -709,7 +709,7 @@
                 if (spotIdx !== -1) {
                   const spotY = u.bbox.top + spotIdx * barHeight + barHeight / 2;
                   ctx.strokeStyle = 'rgb(0, 0, 0)';
-                  ctx.lineWidth = 1;
+                  ctx.lineWidth = 2;
                   ctx.setLineDash([5, 5]);
                   ctx.beginPath();
                   ctx.moveTo(u.bbox.left, spotY);
@@ -721,10 +721,11 @@
                   const text = Math.round(gexData.spot).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, spotY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, spotY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(0, 0, 0)';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), spotY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), spotY + labelTextYOffset);
                 }
               }
 
@@ -745,10 +746,11 @@
                   const text = Math.round(gexData.zero_gamma).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, zgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, zgY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = '#FCB103';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), zgY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), zgY + labelTextYOffset);
                 }
               }
 
@@ -769,10 +771,11 @@
                   const text = Math.round(gexData.major_pos_vol).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mpvY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, mpvY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(34, 197, 94)';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mpvY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), mpvY + labelTextYOffset);
                 }
               }
 
@@ -793,10 +796,11 @@
                   const text = Math.round(gexData.major_neg_vol).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mnvY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, mnvY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(239, 68, 68)';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mnvY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), mnvY + labelTextYOffset);
                 }
               }
 
@@ -817,10 +821,11 @@
                   const text = Math.round(stateData.major_long_gamma).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, mlgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, mlgY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(49, 234, 237)';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), mlgY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), mlgY + labelTextYOffset);
                 }
               }
 
@@ -841,10 +846,11 @@
                   const text = Math.round(stateData.major_short_gamma).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
+                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
                   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(u.bbox.left + u.bbox.width - textWidth - labelPadding, msgY - labelYOffset, textWidth + labelPadding, labelHeight);
+                  ctx.fillRect(labelX, msgY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(170, 86, 249)';
-                  ctx.fillText(text, u.bbox.left + u.bbox.width - textWidth - (labelPadding/2), msgY + labelTextYOffset);
+                  ctx.fillText(text, labelX + (labelPadding/2), msgY + labelTextYOffset);
                 }
               }
             }
