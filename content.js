@@ -89,7 +89,7 @@
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
         createChartConfig('ES_SPX', { top: '45px', left: '5px' }, 15, 4, 4),
-        createChartConfig('SPY', { top: '290px', left: '5px' }, 15, 4, 4),
+        createChartConfig('SPY', { top: '45px', left: '255px' }, 15, 4, 4),
       ];
     }
 
@@ -97,7 +97,7 @@
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
         createChartConfig('NQ_NDX', { top: '45px', left: '5px' }, 25, 5, 5),
-        createChartConfig('QQQ', { top: '290px', left: '5px' }, 25, 4, 4),
+        createChartConfig('QQQ', { top: '45px', left: '255px' }, 25, 4, 4),
       ];
     }
 
@@ -105,7 +105,7 @@
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
         createChartConfig('RUT', { top: '45px', left: '5px' }, 8, 3, 3),
-        createChartConfig('IWM', { top: '290px', left: '5px' }, 8, 3, 3),
+        createChartConfig('IWM', { top: '45px', left: '255px' }, 8, 3, 3),
       ];
     }
 
