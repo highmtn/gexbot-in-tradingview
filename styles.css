@@ -47,25 +47,6 @@
 .chart-classic-link {
   position: absolute;
   bottom: 5px;
-  right: 45px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  color: #666;
-  text-decoration: none;
-  user-select: none;
-  z-index: 10002;
-  background-color: rgba(240, 240, 240, 0.9);
-  border: 1px solid rgba(220, 220, 220, 0.9);
-  border-radius: 4px;
-  padding: 6px 10px;
-  opacity: 0;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
-}
-
-.chart-state-link {
-  position: absolute;
-  bottom: 5px;
   right: 5px;
   cursor: pointer;
   font-size: 16px;
@@ -82,13 +63,11 @@
   transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 
-.chart-overlay-container:hover .chart-classic-link,
-.chart-overlay-container:hover .chart-state-link {
+.chart-overlay-container:hover .chart-classic-link {
   opacity: 1;
 }
 
-.chart-classic-link:hover,
-.chart-state-link:hover {
+.chart-classic-link:hover {
   background-color: rgba(250, 250, 250, 0.95);
   color: #333;
 }
@@ -130,6 +109,13 @@
   margin-left: 8px;
   font-size: 10px;
   font-weight: normal;
+  color: #dc3545;
+}
+
+.chart-stale-indicator {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: bold;
   color: #dc3545;
 }
 

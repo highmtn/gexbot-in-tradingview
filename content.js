@@ -62,8 +62,6 @@
   const getGexbotUrl = (symbol, view) => {
     if (view === 'classic') {
       return `https://www.gexbot.com/classic#${symbol}#latest`;
-    } else if (view === 'state') {
-      return `https://www.gexbot.com/state#${symbol}#option#latest#greek:gamma`;
     }
   };
 
@@ -72,9 +70,7 @@
       symbol,
       position,
       classicApiUrl: getApiUrl(symbol, 'classic/zero'),
-      stateApiUrl: getApiUrl(symbol, 'state/gamma'),
       classicGexbotUrl: getGexbotUrl(symbol, 'classic'),
-      stateGexbotUrl: getGexbotUrl(symbol, 'state'),
       barLevels,
       levelsAboveAnnotation: levelsAboveAnnotation ?? 5, // Default 5 levels above
       levelsBelowAnnotation: levelsBelowAnnotation ?? 5, // Default 5 levels below
@@ -88,35 +84,35 @@
     // MES - show ES_SPX and SPY
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
-        createChartConfig('ES_SPX', { top: '45px', left: '5px' }, 15, 4, 4),
-        createChartConfig('SPY', { top: '45px', left: '210px' }, 15, 2,2),
+        createChartConfig('ES_SPX', { bottom: '5px', left: '40%' }, 15, 4, 4),
+        createChartConfig('SPY', { bottom: '5px', left: 'calc(40% + 210px)' }, 15, 2,2),
       ];
     }
 
     // MNQ - show NQ_NDX and QQQ
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
-        createChartConfig('NQ_NDX', { top: '45px', left: '5px' }, 25, 5, 5),
-        createChartConfig('QQQ', { top: '45px', left: '210px' }, 25, 2,2),
+        createChartConfig('NQ_NDX', { bottom: '5px', left: '40%' }, 25, 5, 5),
+        createChartConfig('QQQ', { bottom: '5px', left: 'calc(40% + 210px)' }, 25, 2,2),
       ];
     }
 
     // M2K - show RUT and IWM
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
-        createChartConfig('RUT', { top: '45px', left: '5px' }, 8, 3, 3),
-        createChartConfig('IWM', { top: '45px', left: '210px' }, 8, 2,2),
+        createChartConfig('IWM', { bottom: '5px', left: '40%' }, 8, 3, 3),
+        createChartConfig('RUT', { bottom: '5px', left: 'calc(40% + 210px)' }, 8, 2,2),
       ];
     }
 
     // GLD - only one chart
     if (currentUrl.includes('/chart/XxfKvVMV/')) {
-      return [createChartConfig('GLD', { top: '45px', left: '5px' }, 10, 2,2)];
+      return [createChartConfig('GLD', { bottom: '5px', left: '40%' }, 10, 2,2)];
     }
 
     // MCL - only one chart (USO with custom 3 level limit)
     if (currentUrl.includes('/chart/kkaSjk8Y/')) {
-      return [createChartConfig('USO', { top: '260px', left: '5px' }, 10,2, 2)];
+      return [createChartConfig('USO', { bottom: '5px', left: '40%' }, 10,2, 2)];
     }
 
     // No match - return empty array
@@ -129,7 +125,11 @@
     const container = document.createElement('div');
     container.className = 'chart-overlay-container';
     container.id = `chart-overlay-container-${index}`;
-    container.style.top = config.position.top;
+    if (config.position.bottom) {
+      container.style.bottom = config.position.bottom;
+    } else if (config.position.top) {
+      container.style.top = config.position.top;
+    }
     container.style.left = config.position.left;
 
     // Create close button
@@ -146,14 +146,6 @@
     classicLink.target = '_blank';
     classicLink.href = config.classicGexbotUrl;
 
-    // Create State link button
-    const stateLink = document.createElement('a');
-    stateLink.className = 'chart-state-link';
-    stateLink.innerHTML = 'S';
-    stateLink.title = 'Open State view';
-    stateLink.target = '_blank';
-    stateLink.href = config.stateGexbotUrl;
-
     // Create ticker label
     const tickerLabel = document.createElement('div');
     tickerLabel.className = 'chart-ticker-label';
@@ -165,6 +157,13 @@
     errorIndicator.textContent = 'API Error';
     errorIndicator.style.display = 'none';
     tickerLabel.appendChild(errorIndicator);
+
+    // Create stale data indicator (hidden by default)
+    const staleIndicator = document.createElement('span');
+    staleIndicator.className = 'chart-stale-indicator';
+    staleIndicator.textContent = '!';
+    staleIndicator.style.display = 'none';
+    tickerLabel.appendChild(staleIndicator);
 
     // Create sum display (upper right corner)
     const sumDisplay = document.createElement('div');
@@ -185,7 +184,6 @@
     container.appendChild(tickerLabel);
     container.appendChild(sumDisplay);
     container.appendChild(classicLink);
-    container.appendChild(stateLink);
 
     // Check if API key is empty and show form
     if (!API_KEY || API_KEY === '') {
@@ -263,9 +261,9 @@
     // Chart instance reference
     let uplot = null;
     let gexData = null;
-    let stateData = null;
     let chartDiv = null;
     let hasApiError = false;
+    let lastUpdateTime = null;
 
     // Function to show error indicator
     function showErrorMessage() {
@@ -278,6 +276,18 @@
       if (hasApiError) {
         hasApiError = false;
         errorIndicator.style.display = 'none';
+      }
+    }
+
+    // Function to check and update stale data indicator
+    function checkStaleData() {
+      if (lastUpdateTime) {
+        const timeSinceUpdate = Date.now() - lastUpdateTime;
+        if (timeSinceUpdate > 30000) { // 30 seconds
+          staleIndicator.style.display = 'inline';
+        } else {
+          staleIndicator.style.display = 'none';
+        }
       }
     }
 
@@ -355,11 +365,6 @@
       openOrSwitchToTab(config.classicGexbotUrl);
     });
 
-    stateLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      openOrSwitchToTab(config.stateGexbotUrl);
-    });
-
     closeButton.addEventListener('click', (e) => {
       e.stopPropagation();
       container.remove();
@@ -380,8 +385,6 @@
         e.target.closest('.chart-close-button') ||
         e.target === classicLink ||
         e.target.closest('.chart-classic-link') ||
-        e.target === stateLink ||
-        e.target.closest('.chart-state-link') ||
         e.target.closest('.chart-api-key-form')
       ) {
         return;
@@ -426,9 +429,6 @@
       if (gexData?.zero_gamma) prices.push(gexData.zero_gamma);
       if (gexData?.major_pos_vol) prices.push(gexData.major_pos_vol);
       if (gexData?.major_neg_vol) prices.push(gexData.major_neg_vol);
-      if (stateData?.major_long_gamma) prices.push(stateData.major_long_gamma);
-      if (stateData?.major_short_gamma)
-        prices.push(stateData.major_short_gamma);
 
       if (prices.length === 0) return null;
 
@@ -447,7 +447,7 @@
         return null;
       }
 
-      let chartLabels, classicData, stateData2;
+      let chartLabels, classicData;
 
       if (gexData.spot) {
         const sortedStrikes = [...gexData.strikes]
@@ -484,38 +484,17 @@
 
         chartLabels = filteredStrikes.map((strike) => strike[0]);
         classicData = filteredStrikes.map((strike) => strike[1]);
-
-        if (
-          stateData &&
-          stateData.mini_contracts &&
-          stateData.mini_contracts.length > 0
-        ) {
-          const sortedStateStrikes = [...stateData.mini_contracts]
-            .filter(
-              (strike) => strike && strike[0] != null && strike[3] != null
-            )
-            .sort((a, b) => a[0] - b[0]);
-          const stateMap = new Map();
-          sortedStateStrikes.forEach((strike) => {
-            stateMap.set(strike[0], strike[3]);
-          });
-          stateData2 = chartLabels.map((price) => stateMap.get(price) || 0);
-        } else {
-          stateData2 = chartLabels.map(() => 0);
-        }
       } else {
         const sortedStrikes = [...gexData.strikes]
           .filter((strike) => strike && strike[0] != null && strike[1] != null)
           .sort((a, b) => a[0] - b[0]);
         chartLabels = sortedStrikes.map((strike) => strike[0]);
         classicData = sortedStrikes.map((strike) => strike[1]);
-        stateData2 = chartLabels.map(() => 0);
       }
 
       return {
         labels: chartLabels.reverse(),
-        classic: classicData.reverse(),
-        state: stateData2.reverse()
+        classic: classicData.reverse()
       };
     }
 
@@ -535,8 +514,7 @@
         // Return empty chart
         data = {
           labels: [],
-          classic: [],
-          state: []
+          classic: []
         };
       }
 
@@ -593,13 +571,6 @@
             width: 0,
             points: { show: false },
           },
-          {
-            label: "State Volume",
-            stroke: "transparent",
-            scale: "x2",
-            width: 0,
-            points: { show: false },
-          },
         ],
         hooks: {
           draw: [
@@ -616,14 +587,13 @@
 
               // Draw bars for GEX Volume (series 1)
               const classicData = u.data[1];
-              const stateDataArray = u.data[2];
               const barHeight = u.bbox.height / data.labels.length;
               const barPadding = barHeight * 0.65;
               const maxBarHeight = 3 * dpr; // Scale max bar height with device pixel ratio
-              const actualBarHeight = Math.min(maxBarHeight, (barHeight - barPadding) / 2); // Split height for stacking
+              const actualBarHeight = Math.min(maxBarHeight, (barHeight - barPadding));
               const positiveBarInset = 15; // 15px inset on positive side to avoid label overlap
 
-              // Draw classic bars (top half of each level)
+              // Draw classic bars
               for (let i = 0; i < classicData.length; i++) {
                 const xVal = classicData[i];
                 if (xVal === null || xVal === undefined) continue;
@@ -644,35 +614,6 @@
                 }
 
                 ctx.fillStyle = xVal >= 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)';
-                ctx.fillRect(barX, yPos, barWidth, actualBarHeight);
-              }
-
-              // Draw state bars (bottom half of each level)
-              for (let i = 0; i < stateDataArray.length; i++) {
-                const xVal = stateDataArray[i];
-                if (xVal === null || xVal === undefined) continue;
-
-                const yPos = u.bbox.top + i * barHeight + barPadding / 2 + actualBarHeight;
-
-                // Use x2 scale for state data
-                const scale = u.scales.x2;
-                const pctX = (xVal - scale.min) / (scale.max - scale.min);
-                const x1 = u.bbox.left + pctX * u.bbox.width;
-                const pct0 = (0 - scale.min) / (scale.max - scale.min);
-                const x0 = u.bbox.left + pct0 * u.bbox.width;
-
-                let barWidth, barX;
-                if (xVal >= 0) {
-                  // Positive: inset 15px from the right
-                  barWidth = Math.max(0, Math.abs(x1 - x0) - positiveBarInset);
-                  barX = x0;
-                } else {
-                  // Negative: no inset
-                  barWidth = Math.abs(x1 - x0);
-                  barX = x1;
-                }
-
-                ctx.fillStyle = xVal >= 0 ? 'rgba(100, 233, 235, 1)' : 'rgba(170, 86, 249, 1)';
                 ctx.fillRect(barX, yPos, barWidth, actualBarHeight);
               }
 
@@ -718,11 +659,11 @@
                   ctx.setLineDash([]);
 
                   // Draw label
-                  const text = Math.round(gexData.spot).toString();
+                  const text = gexData.spot < 2000 ? gexData.spot.toFixed(1) : Math.round(gexData.spot).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
                   const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                   ctx.fillRect(labelX, spotY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(0, 0, 0)';
                   ctx.fillText(text, labelX + (labelPadding/2), spotY + labelTextYOffset);
@@ -743,11 +684,11 @@
                   ctx.stroke();
                   ctx.setLineDash([]);
 
-                  const text = Math.round(gexData.zero_gamma).toString();
+                  const text = gexData.zero_gamma < 2000 ? gexData.zero_gamma.toFixed(1) : Math.round(gexData.zero_gamma).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
                   const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                   ctx.fillRect(labelX, zgY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = '#FCB103';
                   ctx.fillText(text, labelX + (labelPadding/2), zgY + labelTextYOffset);
@@ -768,11 +709,11 @@
                   ctx.stroke();
                   ctx.setLineDash([]);
 
-                  const text = Math.round(gexData.major_pos_vol).toString();
+                  const text = gexData.major_pos_vol < 2000 ? gexData.major_pos_vol.toFixed(1) : Math.round(gexData.major_pos_vol).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
                   const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                   ctx.fillRect(labelX, mpvY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(34, 197, 94)';
                   ctx.fillText(text, labelX + (labelPadding/2), mpvY + labelTextYOffset);
@@ -793,64 +734,14 @@
                   ctx.stroke();
                   ctx.setLineDash([]);
 
-                  const text = Math.round(gexData.major_neg_vol).toString();
+                  const text = gexData.major_neg_vol < 2000 ? gexData.major_neg_vol.toFixed(1) : Math.round(gexData.major_neg_vol).toString();
                   ctx.font = `bold ${fontSize}px sans-serif`;
                   const textWidth = ctx.measureText(text).width;
                   const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                   ctx.fillRect(labelX, mnvY - labelYOffset, textWidth + labelPadding, labelHeight);
                   ctx.fillStyle = 'rgb(239, 68, 68)';
                   ctx.fillText(text, labelX + (labelPadding/2), mnvY + labelTextYOffset);
-                }
-              }
-
-              // Draw major long gamma line
-              if (stateData?.major_long_gamma && data.labels.length > 0) {
-                const mlgIdx = getInterpolatedYPos(stateData.major_long_gamma, data.labels);
-                if (mlgIdx !== -1) {
-                  const mlgY = u.bbox.top + mlgIdx * barHeight + barHeight / 2;
-                  ctx.strokeStyle = 'rgb(100, 233, 235)';
-                  ctx.lineWidth = 1;
-                  ctx.setLineDash([2, 2]);
-                  ctx.beginPath();
-                  ctx.moveTo(u.bbox.left, mlgY);
-                  ctx.lineTo(u.bbox.left + u.bbox.width, mlgY);
-                  ctx.stroke();
-                  ctx.setLineDash([]);
-
-                  const text = Math.round(stateData.major_long_gamma).toString();
-                  ctx.font = `bold ${fontSize}px sans-serif`;
-                  const textWidth = ctx.measureText(text).width;
-                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(labelX, mlgY - labelYOffset, textWidth + labelPadding, labelHeight);
-                  ctx.fillStyle = 'rgb(49, 234, 237)';
-                  ctx.fillText(text, labelX + (labelPadding/2), mlgY + labelTextYOffset);
-                }
-              }
-
-              // Draw major short gamma line
-              if (stateData?.major_short_gamma && data.labels.length > 0) {
-                const msgIdx = getInterpolatedYPos(stateData.major_short_gamma, data.labels);
-                if (msgIdx !== -1) {
-                  const msgY = u.bbox.top + msgIdx * barHeight + barHeight / 2;
-                  ctx.strokeStyle = 'rgb(170, 86, 249)';
-                  ctx.lineWidth = 1;
-                  ctx.setLineDash([2, 2]);
-                  ctx.beginPath();
-                  ctx.moveTo(u.bbox.left, msgY);
-                  ctx.lineTo(u.bbox.left + u.bbox.width, msgY);
-                  ctx.stroke();
-                  ctx.setLineDash([]);
-
-                  const text = Math.round(stateData.major_short_gamma).toString();
-                  ctx.font = `bold ${fontSize}px sans-serif`;
-                  const textWidth = ctx.measureText(text).width;
-                  const labelX = u.bbox.left + (u.bbox.width / 2) - (textWidth / 2) - (labelPadding / 2);
-                  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-                  ctx.fillRect(labelX, msgY - labelYOffset, textWidth + labelPadding, labelHeight);
-                  ctx.fillStyle = 'rgb(170, 86, 249)';
-                  ctx.fillText(text, labelX + (labelPadding/2), msgY + labelTextYOffset);
                 }
               }
             }
@@ -858,25 +749,9 @@
         }
       };
 
-      // Add x2 scale for state data
-      opts.scales.x2 = {
-        time: false,
-        range: (u, dataMin, dataMax) => {
-          // Dynamically calculate range based on current state data
-          const currentStateData = u.data[2] || [];
-          const minState = Math.min(...currentStateData.filter(v => v != null), 0);
-          const maxState = Math.max(...currentStateData.filter(v => v != null), 0);
-          const stateNeg = Math.abs(minState) * 1.1;
-          const statePos = maxState * 1.1;
-          const stateMax = Math.max(stateNeg, statePos) || 1;
-          return [-stateMax, stateMax];
-        },
-      };
-
       const chart = new uPlot(opts, [
         data.labels,
-        data.classic,
-        data.state
+        data.classic
       ], chartDiv);
 
       return chart;
@@ -924,27 +799,13 @@
 
             gexData = response.data;
 
+            // Update last update time
+            lastUpdateTime = Date.now();
+
             // Update sum display with new data
             updateSumDisplay();
 
-            if (config.stateApiUrl) {
-              chrome.runtime.sendMessage(
-                { action: 'fetchGexData', url: config.stateApiUrl },
-                (stateResponse) => {
-                  if (chrome.runtime.lastError) {
-                    updateChart();
-                    return;
-                  }
-                  if (stateResponse?.success) {
-                    stateData = stateResponse.data;
-                  }
-                  updateChart();
-                }
-              );
-            } else {
-              stateData = null;
-              updateChart();
-            }
+            updateChart();
           } else {
             showErrorMessage();
           }
@@ -961,6 +822,9 @@
 
     fetchGexData();
     setInterval(fetchGexData, 5000);
+
+    // Check for stale data every 5 seconds
+    setInterval(checkStaleData, 5000);
 
     // Store chart instance for dynamic reloading
     chartInstances.push({ container });
