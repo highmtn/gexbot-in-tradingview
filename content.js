@@ -520,7 +520,7 @@
 
       const containerRect = container.getBoundingClientRect();
       const width = Math.max(200, containerRect.width - 10);
-      const height = Math.max(200, containerRect.height - 10);
+      const height = Math.max(160, containerRect.height - 10);
 
       // Note: scales are now dynamically calculated in the range functions
 
@@ -650,7 +650,7 @@
                 if (spotIdx !== -1) {
                   const spotY = u.bbox.top + spotIdx * barHeight + barHeight / 2;
                   ctx.strokeStyle = 'rgb(0, 0, 0)';
-                  ctx.lineWidth = 2;
+                  ctx.lineWidth = 1;
                   ctx.setLineDash([5, 5]);
                   ctx.beginPath();
                   ctx.moveTo(u.bbox.left, spotY);

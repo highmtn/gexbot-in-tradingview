@@ -1,7 +1,7 @@
 .chart-overlay-container {
   position: fixed;
   width: 200px;
-  height: 200px;
+  height: 160px;
   background-color: rgba(242, 247, 255, 1);
   border: 1px solid rgb(221, 227, 236);
   border-radius: 6px;
