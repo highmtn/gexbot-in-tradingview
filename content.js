@@ -77,6 +77,12 @@
     };
   };
 
+  // Chart position settings
+  const CHART_POSITION = {
+    left: { bottom: '5px', left: '50%' },
+    right: { bottom: '5px', left: 'calc(50% + 210px)' },
+  };
+
   // Determine which charts to show based on URL
   const getChartConfigs = () => {
     const currentUrl = window.location.href;
@@ -84,35 +90,35 @@
     // MES - show ES_SPX and SPY
     if (currentUrl.includes('/chart/RwyW88xf/')) {
       return [
-        createChartConfig('ES_SPX', { bottom: '5px', left: '40%' }, 15, 4, 4),
-        createChartConfig('SPY', { bottom: '5px', left: 'calc(40% + 210px)' }, 15, 2,2),
+        createChartConfig('ES_SPX', CHART_POSITION.left, 15, 4, 4),
+        createChartConfig('SPY', CHART_POSITION.right, 15, 2, 2),
       ];
     }
 
     // MNQ - show NQ_NDX and QQQ
     if (currentUrl.includes('/chart/WTxk3Mhm/')) {
       return [
-        createChartConfig('NQ_NDX', { bottom: '5px', left: '40%' }, 25, 5, 5),
-        createChartConfig('QQQ', { bottom: '5px', left: 'calc(40% + 210px)' }, 25, 2,2),
+        createChartConfig('NQ_NDX', CHART_POSITION.left, 25, 5, 5),
+        createChartConfig('QQQ', CHART_POSITION.right, 25, 2, 2),
       ];
     }
 
     // M2K - show RUT and IWM
     if (currentUrl.includes('/chart/2quwgD8W/')) {
       return [
-        createChartConfig('IWM', { bottom: '5px', left: '40%' }, 8, 3, 3),
-        createChartConfig('RUT', { bottom: '5px', left: 'calc(40% + 210px)' }, 8, 2,2),
+        createChartConfig('IWM', CHART_POSITION.left, 8, 3, 3),
+        createChartConfig('RUT', CHART_POSITION.right, 8, 2, 2),
       ];
     }
 
     // GLD - only one chart
     if (currentUrl.includes('/chart/XxfKvVMV/')) {
-      return [createChartConfig('GLD', { bottom: '5px', left: '40%' }, 10, 2,2)];
+      return [createChartConfig('GLD', CHART_POSITION.left, 10, 2, 2)];
     }
 
     // MCL - only one chart (USO with custom 3 level limit)
     if (currentUrl.includes('/chart/kkaSjk8Y/')) {
-      return [createChartConfig('USO', { bottom: '5px', left: '40%' }, 10,2, 2)];
+      return [createChartConfig('USO', CHART_POSITION.left, 10, 2, 2)];
     }
 
     // No match - return empty array
